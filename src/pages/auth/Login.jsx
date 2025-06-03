@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { loginUser } from "../../services/authService";
 import { loginSuccess } from "../../redux/reducer/authReducer";
+import logo from "../../assets/image/logoHUSC.png";
 
 const LoginForm = () => {
   const {
@@ -37,17 +38,12 @@ const LoginForm = () => {
   return (
     <section className="bg-gray-50 dark:bg-gray-900 min-h-screen flex items-center justify-center max-w-lg w-full">
       <div className="w-full flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
-        <a
-          href="#"
-          className="flex items-center mb-6 text-2xl font-semibold text-gray-900 dark:text-white"
-        >
-          <img
-            className="w-8 h-8 mr-2"
-            src="https://flowbite.s3.amazonaws.com/blocks/marketing-ui/logo.svg"
-            alt="logo"
-          />
-          HUSC
-        </a>
+        <div className="flex items-center gap-3 mb-6 text-gray-900 dark:text-white">
+          <img src={logo} alt="Logo" className="w-12 h-12 object-contain" />
+          <span className="text-3xl font-bold tracking-wide text-blue-900">
+            HUSC
+          </span>
+        </div>
         <div className="w-full bg-white rounded-lg shadow dark:border max-w-lg xl:p-0 dark:bg-gray-800 dark:border-gray-700 outline outline-1 outline-gray-300">
           <div className="w-full p-6 space-y-4 md:space-y-6 sm:p-8">
             <h1 className="text-center text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white">
@@ -82,7 +78,7 @@ const LoginForm = () => {
                     required: "Email không được để trống",
                   })}
                   className="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                  placeholder="name@company.com"
+                  placeholder="name@husc.edu.vn"
                 />
                 {errors.email && (
                   <p className="text-red-500 text-sm">{errors.email.message}</p>
@@ -116,16 +112,36 @@ const LoginForm = () => {
               >
                 Đăng nhập
               </button>
-              <p className="text-sm text-center font-light text-gray-500 dark:text-gray-400">
-                Chưa có tài khoản?{" "}
-                <a
-                  href="register"
-                  className="font-medium text-blue-600 hover:underline dark:text-blue-500"
-                >
-                  Đăng ký
-                </a>
-              </p>
             </form>
+            <div className="relative flex items-center justify-center w-full">
+              <div className="w-full h-px bg-gray-300"></div>
+              <span className="absolute px-2 bg-white text-gray-500 text-sm">
+                hoặc
+              </span>
+            </div>
+
+            <button
+              onClick={() =>
+                (window.location.href = "http://localhost:3001/api/auth/google")
+              }
+              className="mt-4 w-full flex items-center justify-center gap-2 border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium rounded-lg text-sm px-5 py-2.5"
+            >
+              <img
+                src="https://img.favpng.com/15/12/25/google-logo-google-adwords-g-suite-google-account-png-favpng-ZPDpvjf5PW8XaAnw6V9PQkcut.jpg"
+                alt="Google"
+                className="w-5 h-5"
+              />
+              Đăng nhập với Google
+            </button>
+            <p className="text-sm text-center font-light text-gray-500 dark:text-gray-400">
+              Chưa có tài khoản?{" "}
+              <a
+                href="register"
+                className="font-medium text-blue-600 hover:underline dark:text-blue-500"
+              >
+                Đăng ký
+              </a>
+            </p>
           </div>
         </div>
       </div>

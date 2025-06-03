@@ -7,123 +7,197 @@ import {
   commentPost,
   repostPost,
   reportPost,
+  fetchPublicPosts,
+  editPost,
+  getPostsByUserId,
+  getFollowingPosts,
+  getReportedPosts,
+  hidePost,
+  ignoreReport,
+  deleteReportedPost,
+  searchPosts,
 } from "../../services/postService";
 
-// Thunk lấy danh sách bài viết
-export const fetchPostsThunk = createAsyncThunk(
-  "posts/fetchPosts",
-  async () => {
-    return await fetchPosts();
+export const fetchPostsThunk = createAsyncThunk("posts/fetchPosts", fetchPosts);
+
+export const updatePostThunk = createAsyncThunk(
+  "posts/updatePost",
+  async ({ postId, content, media, privacy }) =>
+    editPost({ postId, content, media, privacy })
+);
+
+export const fetchPublicPostsThunk = createAsyncThunk(
+  "posts/fetchPublicPosts",
+  async (lastCreatedAt) => fetchPublicPosts(lastCreatedAt)
+);
+
+export const fetchFollowingPostsThunk = createAsyncThunk(
+  "posts/fetchFollowingPosts",
+  async ({ userId, lastCreatedAt }) => getFollowingPosts(userId, lastCreatedAt)
+);
+
+export const searchPostsThunk = createAsyncThunk(
+  "posts/searchPosts",
+  async ({ query, lastCreatedAt }, { rejectWithValue }) => {
+    try {
+      return await searchPosts(query, lastCreatedAt);
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.error || "Lỗi tìm kiếm bài viết"
+      );
+    }
   }
 );
 
-// Thunk tạo bài viết mới
 export const createPostThunk = createAsyncThunk(
   "posts/createPost",
   async (postData) => {
     const formData = new FormData();
-
-    // Thêm nội dung bài viết vào formData
     formData.append("content", postData.content);
-
-    // Thêm privacy vào formData (mặc định là public nếu không có)
     formData.append("privacy", postData.privacy || "public");
 
-    // Kiểm tra và thêm các tệp media nếu có (media là mảng)
     if (Array.isArray(postData.media)) {
       postData.media.forEach((file) => {
-        if (file.type === "image") {
-          formData.append("image[]", file.url); // Thêm hình ảnh vào formData
-        } else if (file.type === "video") {
-          formData.append("video[]", file.url); // Thêm video vào formData
-        }
+        if (file.type === "image") formData.append("image[]", file.url);
+        else if (file.type === "video") formData.append("video[]", file.url);
       });
     }
 
-    // Gọi createPost và truyền formData
-    return await createPost(formData);
+    return createPost(formData);
   }
 );
 
-// Thunk xóa bài viết
-export const deletePostThunk = createAsyncThunk(
-  "posts/deletePost",
-  async (postId) => {
-    return await deletePost(postId);
-  }
-);
-
-// Thunk like bài viết
-export const likePostThunk = createAsyncThunk(
-  "posts/likePost",
-  async ({ postId, userId }) => {
-    return await likePost({ postId, userId });
-  }
-);
-
-// Thunk bình luận bài viết
+export const deletePostThunk = createAsyncThunk("posts/deletePost", deletePost);
+export const likePostThunk = createAsyncThunk("posts/likePost", likePost);
 export const commentPostThunk = createAsyncThunk(
   "posts/commentPost",
-  async ({ postId, userId, content }) => {
-    return await commentPost({ postId, userId, content });
-  }
+  commentPost
 );
 
-// Thunk đăng lại bài viết
-export const repostPostThunk = createAsyncThunk(
-  "posts/repostPost",
-  async ({ userId, postId }) => {
-    return await repostPost({ userId, postId });
-  }
+export const repostPostThunk = createAsyncThunk("posts/repostPost", repostPost);
+
+export const reportPostThunk = createAsyncThunk("posts/reportPost", reportPost);
+
+export const fetchPostsByUserIdThunk = createAsyncThunk(
+  "posts/fetchPostsByUserId",
+  getPostsByUserId
 );
 
-// Thunk báo cáo bài viết
-export const reportPostThunk = createAsyncThunk(
-  "posts/reportPost",
-  async ({ postId, userId, reason }) => {
-    return await reportPost({ postId, userId, reason });
-  }
+export const getReportedPostsThunk = createAsyncThunk(
+  "posts/getReportedPosts",
+  getReportedPosts
 );
 
-// Thêm một actionStatus cụ thể cho mỗi action
+export const hidePostThunk = createAsyncThunk(
+  "posts/hidePost",
+  async (postId) => hidePost(postId)
+);
+
+export const ignoreReportThunk = createAsyncThunk(
+  "posts/ignoreReport",
+  async (postId) => ignoreReport(postId)
+);
+
+export const deleteReportedPostThunk = createAsyncThunk(
+  "posts/deleteReportedPost",
+  async (postId) => deleteReportedPost(postId)
+);
+
+const initialState = {
+  posts: [],
+  searchedPosts: [],
+  searchStatus: "idle",
+  searchError: null,
+  followingPosts: [],
+  reportedPosts: [],
+  userPosts: [],
+  status: {
+    forYou: "idle",
+    following: "idle",
+  },
+  error: null,
+  actionStatus: {
+    creating: false,
+    deleting: false,
+    liking: false,
+    commenting: false,
+    reposting: false,
+    reporting: false,
+  },
+  reportMessage: null,
+  createError: null,
+  deleteError: null,
+};
+
 const postSlice = createSlice({
   name: "posts",
-  initialState: {
-    posts: [],
-    status: "idle",
-    error: null,
-    actionStatus: {
-      creating: false,
-      deleting: false,
-      liking: false,
-      commenting: false,
-      reposting: false,
-      reporting: false,
-    },
-    reportMessage: null,
-    createError: null, // Thêm error riêng cho từng action
-    deleteError: null, // Thêm error riêng cho từng action
-  },
+  initialState,
   reducers: {},
   extraReducers: (builder) => {
     builder
-      // Fetch posts
-      .addCase(fetchPostsThunk.pending, (state) => {
-        state.status = "loading";
+      .addCase(fetchPublicPostsThunk.pending, (state) => {
+        state.status.forYou = "loading";
       })
-      .addCase(fetchPostsThunk.fulfilled, (state, action) => {
-        state.status = "succeeded";
-        state.posts = action.payload;
+      .addCase(fetchPublicPostsThunk.fulfilled, (state, action) => {
+        state.status.forYou = "succeeded";
+        if (!action.meta.arg) {
+          state.posts = action.payload;
+        } else {
+          state.posts = [...state.posts, ...action.payload];
+        }
       })
-      .addCase(fetchPostsThunk.rejected, (state, action) => {
-        state.status = "failed";
+      .addCase(fetchPublicPostsThunk.rejected, (state, action) => {
+        state.status.forYou = "failed";
         state.error = action.error.message;
       })
 
-      // Create post
+      .addCase(fetchFollowingPostsThunk.pending, (state) => {
+        state.status.following = "loading";
+      })
+      .addCase(fetchFollowingPostsThunk.fulfilled, (state, action) => {
+        state.status.following = "succeeded";
+        if (action.meta.arg?.lastCreatedAt) {
+          state.followingPosts = [...state.followingPosts, ...action.payload];
+        } else {
+          state.followingPosts = action.payload;
+        }
+      })
+      .addCase(fetchFollowingPostsThunk.rejected, (state, action) => {
+        state.status.following = "failed";
+        state.error = action.error.message;
+      })
+
+      .addCase(fetchPostsByUserIdThunk.pending, (state) => {
+        state.status.forYou = "loading";
+      })
+      .addCase(fetchPostsByUserIdThunk.fulfilled, (state, action) => {
+        state.status.forYou = "succeeded";
+        state.userPosts = action.payload;
+      })
+      .addCase(fetchPostsByUserIdThunk.rejected, (state, action) => {
+        state.status.forYou = "failed";
+        state.error = action.error.message;
+      })
+
+      .addCase(searchPostsThunk.pending, (state) => {
+        state.searchStatus = "loading";
+      })
+      .addCase(searchPostsThunk.fulfilled, (state, action) => {
+        state.searchStatus = "succeeded";
+        if (!action.meta.arg.lastCreatedAt) {
+          state.searchedPosts = action.payload;
+        } else {
+          state.searchedPosts = [...state.searchedPosts, ...action.payload];
+        }
+      })
+      .addCase(searchPostsThunk.rejected, (state, action) => {
+        state.searchStatus = "failed";
+        state.searchError = action.payload;
+      })
+
       .addCase(createPostThunk.pending, (state) => {
         state.actionStatus.creating = true;
-        state.createError = null; // Reset error when starting
+        state.createError = null;
       })
       .addCase(createPostThunk.fulfilled, (state, action) => {
         state.posts.unshift(action.payload);
@@ -131,13 +205,20 @@ const postSlice = createSlice({
       })
       .addCase(createPostThunk.rejected, (state, action) => {
         state.actionStatus.creating = false;
-        state.createError = action.error.message; // Error riêng cho action tạo bài viết
+        state.createError = action.error.message;
       })
 
-      // Delete post
+      .addCase(updatePostThunk.fulfilled, (state, action) => {
+        const updatedPost = action.payload;
+        const index = state.posts.findIndex(
+          (post) => post._id === updatedPost._id
+        );
+        if (index !== -1) state.posts[index] = updatedPost;
+      })
+
       .addCase(deletePostThunk.pending, (state) => {
         state.actionStatus.deleting = true;
-        state.deleteError = null; // Reset error when starting
+        state.deleteError = null;
       })
       .addCase(deletePostThunk.fulfilled, (state, action) => {
         state.posts = state.posts.filter((post) => post._id !== action.payload);
@@ -145,52 +226,66 @@ const postSlice = createSlice({
       })
       .addCase(deletePostThunk.rejected, (state, action) => {
         state.actionStatus.deleting = false;
-        state.deleteError = action.error.message; // Error riêng cho action xóa bài viết
+        state.deleteError = action.error.message;
       })
 
-      // Like post
       .addCase(likePostThunk.fulfilled, (state, action) => {
-        const { postId, userId } = action.payload;
-        const post = state.posts.find((post) => post._id === postId);
-        if (post) {
-          if (post.likes.includes(userId)) {
-            post.likes = post.likes.filter((id) => id !== userId); // Bỏ like
-          } else {
-            post.likes.push(userId); // Thêm like
-          }
-        }
-      })
-      .addCase(likePostThunk.rejected, (state, action) => {
-        state.error = action.error.message;
+        const updated = action.payload;
+
+        const idx1 = state.posts.findIndex((p) => p._id === updated._id);
+        if (idx1 !== -1) state.posts[idx1] = updated;
+
+        const idx2 = state.followingPosts.findIndex(
+          (p) => p._id === updated._id
+        );
+        if (idx2 !== -1) state.followingPosts[idx2] = updated;
+
+        const idx3 = state.searchedPosts.findIndex(
+          (p) => p._id === updated._id
+        );
+        if (idx3 !== -1) state.searchedPosts[idx3] = updated;
       })
 
-      // Comment post
       .addCase(commentPostThunk.fulfilled, (state, action) => {
         const updatedPost = action.payload;
-        const index = state.posts.findIndex(
+
+        const idx1 = state.posts.findIndex(
           (post) => post._id === updatedPost._id
         );
-        if (index !== -1) {
-          state.posts[index] = updatedPost;
-        }
+        if (idx1 !== -1) state.posts[idx1] = updatedPost;
+
+        const idx2 = state.followingPosts.findIndex(
+          (post) => post._id === updatedPost._id
+        );
+        if (idx2 !== -1) state.followingPosts[idx2] = updatedPost;
+
+        const idx3 = state.searchedPosts.findIndex(
+          (post) => post._id === updatedPost._id
+        );
+        if (idx3 !== -1) state.searchedPosts[idx3] = updatedPost;
       })
+
       .addCase(commentPostThunk.rejected, (state, action) => {
         state.error = action.error.message;
       })
 
-      // Repost
       .addCase(repostPostThunk.fulfilled, (state, action) => {
         state.posts.unshift(action.payload);
       })
       .addCase(repostPostThunk.rejected, (state, action) => {
         state.error = action.error.message;
       })
+      .addCase(getReportedPostsThunk.fulfilled, (state, action) => {
+        state.reportedPosts = action.payload;
+      })
+      .addCase(hidePostThunk.fulfilled, (state, action) => {})
+      .addCase(ignoreReportThunk.fulfilled, (state, action) => {})
+      .addCase(deleteReportedPostThunk.fulfilled, (state, action) => {})
 
-      // Report post
       .addCase(reportPostThunk.pending, (state) => {
         state.actionStatus.reporting = true;
       })
-      .addCase(reportPostThunk.fulfilled, (state, action) => {
+      .addCase(reportPostThunk.fulfilled, (state) => {
         state.actionStatus.reporting = false;
         state.reportMessage = "Bài viết đã được báo cáo thành công.";
       })

@@ -2,12 +2,13 @@ import {
   Home,
   Search,
   PlusCircle,
-  Heart,
   User,
-  Shield,
-  Settings,
-  LayoutDashboard,
   Bell,
+  Users,
+  FileText,
+  BarChart,
+  LayoutDashboardIcon,
+  ShieldAlert,
 } from "lucide-react";
 import HomePage from "../pages/Home";
 import SearchPage from "../pages/SearchPage";
@@ -15,6 +16,11 @@ import Notification from "../pages/Notification";
 import Profile from "../pages/Profile";
 import LoginForm from "../pages/auth/Login";
 import RegisterForm from "../pages/auth/RegisterForm";
+import AdminDashboardPage from "../pages/Admin/AdminDashboardPage";
+import AdminUsersPage from "../pages/Admin/AdminUsersPage";
+import AdminPostsPage from "../pages/Admin/AdminPostsPage";
+import AdminReportsPage from "../pages/Admin/AdminReportsPage";
+import AdminStatsPage from "../pages/Admin/AdminStatsPage";
 
 export const routes = [
   {
@@ -36,7 +42,7 @@ export const routes = [
       },
       {
         name: "Profile",
-        path: "/profile",
+        path: "/profile/:id",
         icon: <User />,
         element: <Profile />,
       },
@@ -62,20 +68,41 @@ export const routes = [
   {
     layout: "AdminLayout",
     pages: [
+      // {
+      //   name: "Dashboard",
+      //   label: "Dashboard",
+      //   path: "/dashboard",
+      //   icon: <LayoutDashboardIcon />,
+      //   element: <AdminDashboardPage />,
+      // },
       {
-        name: "Dashboard",
-        path: "/dashboard",
-        icon: <LayoutDashboard />,
-        element: null,
+        name: "Users",
+        label: "Người dùng",
+        path: "/users",
+        icon: <Users />,
+        element: <AdminUsersPage />,
       },
-      { name: "Users", path: "/users", icon: <User />, element: null },
+      // {
+      //   name: "Posts",
+      //   label: "Bài viết",
+      //   path: "/posts",
+      //   icon: <FileText />,
+      //   element: <AdminPostsPage />,
+      // },
       {
-        name: "Settings",
-        path: "/settings",
-        icon: <Settings />,
-        element: null,
+        name: "Reports",
+        label: "Báo cáo",
+        path: "/reports",
+        icon: <ShieldAlert />,
+        element: <AdminReportsPage />,
       },
-      { name: "Security", path: "/security", icon: <Shield />, element: null },
+      // {
+      //   name: "Stats",
+      //   label: "Thống kê",
+      //   path: "/stats",
+      //   icon: <BarChart />,
+      //   element: <AdminStatsPage />,
+      // },
     ],
   },
 ];
