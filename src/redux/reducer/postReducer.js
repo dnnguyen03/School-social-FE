@@ -276,8 +276,11 @@ const postSlice = createSlice({
         state.error = action.error.message;
       })
       .addCase(getReportedPostsThunk.fulfilled, (state, action) => {
-        state.reportedPosts = action.payload;
+        state.reportedPosts = action.payload.sort(
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+        );
       })
+
       .addCase(hidePostThunk.fulfilled, (state, action) => {})
       .addCase(ignoreReportThunk.fulfilled, (state, action) => {})
       .addCase(deleteReportedPostThunk.fulfilled, (state, action) => {})

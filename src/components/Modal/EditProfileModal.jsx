@@ -1,20 +1,25 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Camera, User, X } from "lucide-react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { updateUserThunk } from "../../redux/reducer/userReduce";
 import { closeEditProfileModal } from "../../redux/reducer/modalReducer";
 import { setAuthUser } from "../../redux/reducer/authReducer";
+import { checkUsernameThunk } from "../../redux/reducer/userReduce";
 
 export default function EditProfileModal() {
   const dispatch = useDispatch();
   const user = JSON.parse(localStorage.getItem("user"));
 
+  const usernameCheckResult = useSelector(
+    (state) => state.user.usernameCheckResult
+  );
+
   const [fullName, setFullName] = useState(user?.fullName || "");
   const [username, setUsername] = useState(user?.username || "");
-  const [email, setEmail] = useState(user?.email || "");
+  const [email] = useState(user?.email || "");
   const [bio, setBio] = useState(user?.bio || "");
   const [preview, setPreview] = useState(user?.avatarUrl || "");
-  const [avatarFile, setAvatarFile] = useState(null); // Chỉ lưu file, chưa upload
+  const [avatarFile, setAvatarFile] = useState(null);
 
   const handleClose = () => dispatch(closeEditProfileModal());
 
@@ -22,61 +27,69 @@ export default function EditProfileModal() {
     const file = e.target.files[0];
     if (!file) return;
     setAvatarFile(file);
-    setPreview(URL.createObjectURL(file)); // Hiển thị ảnh xem trước
+    setPreview(URL.createObjectURL(file));
   };
 
-  const handleSubmit = () => {
-    handleClose(); // Đóng ngay khi bấm
+  // Check username mỗi khi thay đổi
+  useEffect(() => {
+    if (!username) return;
+    dispatch(checkUsernameThunk({ username, currentUserId: user._id }));
+  }, [username, dispatch, user._id]);
 
-    // Nếu không đổi ảnh
-    if (!avatarFile) {
-      dispatch(
-        updateUserThunk({
-          fullName,
-          username,
-          email,
-          bio,
-          avatarUrl: user.avatarUrl,
-        })
-      ).then((res) => {
+  // Memo hóa logic kiểm tra hợp lệ của username
+  const isUsernameInvalid = useMemo(() => {
+    return usernameCheckResult?.exists && username !== user.username;
+  }, [usernameCheckResult, username, user.username]);
+
+  const handleSubmit = () => {
+    if (isUsernameInvalid) return; // an toàn, đề phòng submit ngoài UI
+
+    handleClose();
+
+    const updateData = {
+      fullName,
+      username,
+      email,
+      bio,
+      avatarUrl: user.avatarUrl,
+    };
+
+    const submitUpdate = (avatarUrl) => {
+      if (avatarUrl) updateData.avatarUrl = avatarUrl;
+
+      dispatch(updateUserThunk(updateData)).then((res) => {
         if (res.meta.requestStatus === "fulfilled") {
           const updatedUser = res.payload;
           dispatch(setAuthUser({ ...updatedUser, id: updatedUser._id }));
         }
       });
-      return;
+    };
+
+    // Nếu có file ảnh mới thì upload
+    if (avatarFile) {
+      const formData = new FormData();
+      formData.append("file", avatarFile);
+      formData.append(
+        "upload_preset",
+        import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
+      );
+
+      fetch(
+        `https://api.cloudinary.com/v1_1/${
+          import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
+        }/image/upload`,
+        { method: "POST", body: formData }
+      )
+        .then((res) => res.json())
+        .then((data) => {
+          submitUpdate(data.secure_url);
+        })
+        .catch((err) => {
+          console.error("Lỗi upload ảnh:", err);
+        });
+    } else {
+      submitUpdate();
     }
-
-    // Có ảnh mới: upload ngầm
-    const formData = new FormData();
-    formData.append("file", avatarFile);
-    formData.append(
-      "upload_preset",
-      import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET
-    );
-
-    fetch(
-      `https://api.cloudinary.com/v1_1/${
-        import.meta.env.VITE_CLOUDINARY_CLOUD_NAME
-      }/image/upload`,
-      { method: "POST", body: formData }
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        const avatarUrl = data.secure_url;
-        return dispatch(
-          updateUserThunk({ fullName, username, email, bio, avatarUrl })
-        );
-      })
-      .then((res) => {
-        if (res.meta?.requestStatus === "fulfilled") {
-          const updatedUser = res.payload;
-          dispatch(setAuthUser({ ...updatedUser, id: updatedUser._id }));
-        }
-      })
-      .catch((err) => {
-        console.error("Lỗi upload ảnh:", err);
-      });
   };
 
   return (
@@ -139,13 +152,17 @@ export default function EditProfileModal() {
               className="w-full border px-3 py-2 rounded"
               placeholder="Nhập tên đăng nhập"
             />
+            {isUsernameInvalid && (
+              <div className="text-red-500 text-sm mt-1">
+                Username đã tồn tại
+              </div>
+            )}
           </div>
 
           <div>
             <label className="block text-sm text-gray-700 mb-1">Email</label>
             <input
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
               className="w-full border px-3 py-2 rounded"
               placeholder="Nhập email"
               readOnly
@@ -179,7 +196,12 @@ export default function EditProfileModal() {
           </button>
           <button
             onClick={handleSubmit}
-            className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
+            disabled={isUsernameInvalid}
+            className={`px-4 py-2 rounded text-white ${
+              isUsernameInvalid
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-blue-600 hover:bg-blue-700"
+            }`}
           >
             Lưu thay đổi
           </button>

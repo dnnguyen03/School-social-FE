@@ -139,9 +139,9 @@ const Post = ({ post }) => {
       </div>
 
       <div className="cursor-pointer" onClick={() => setIsOpen(true)}>
-        <p className="whitespace-pre-line line-clamp-4">{post.content}</p>
-        {post.content.split("\n").length > 4 || post.content.length > 400 ? (
-          <span className="text-blue-500 font-medium">Xem thêm</span>
+        <p className="whitespace-pre-line line-clamp-4 pb-1">{post.content}</p>
+        {post.content.length > 350 ? (
+          <span className="text-blue-500 font-medium">Xem thêm...</span>
         ) : null}
       </div>
       <AnimatePresence>

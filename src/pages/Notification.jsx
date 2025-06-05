@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useLayoutEffect } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import Spinner from "../components/LoadSpinner";
 import {
@@ -29,29 +29,15 @@ export default function Notification() {
   } = useSelector((state) => state.notification);
 
   useEffect(() => {
-    dispatch(resetNotifications());
     dispatch(fetchNotificationsThunk());
-
     return () => {
       dispatch(markAllAsReadThunk());
     };
   }, [dispatch]);
 
-  useLayoutEffect(() => {
-    const prevPath = sessionStorage.getItem("prevPath");
-
-    if (prevPath === "/activity" && location.pathname !== "/activity") {
-      dispatch(markAllAsReadThunk()).then(() => {
-        dispatch(fetchNotificationsThunk());
-      });
-    }
-
-    sessionStorage.setItem("prevPath", location.pathname);
-  }, [location.pathname, dispatch]);
-
+  // Infinite scroll: load thêm khi tới cuối
   useEffect(() => {
     if (!hasMore || loading) return;
-
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -157,8 +143,21 @@ export default function Notification() {
                     </div>
                   </>
                 ) : (
-                  <p>{noti.message}</p>
+                  <>
+                    <p>{noti.message}</p>
+                    {["like", "comment"].includes(noti.type) && noti.post && (
+                      <div className="mt-1">
+                        <button
+                          className="text-blue-600 underline text-sm"
+                          onClick={() => handleViewPost(noti.post)}
+                        >
+                          Xem bài viết
+                        </button>
+                      </div>
+                    )}
+                  </>
                 )}
+
                 <p className="text-xs text-gray-500 mt-1">
                   {new Date(noti.updatedAt).toLocaleString("vi-VN", {
                     day: "2-digit",

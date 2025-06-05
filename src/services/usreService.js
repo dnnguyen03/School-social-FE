@@ -26,6 +26,16 @@ export const getMutuals = async () => {
   return response.data;
 };
 
+export const checkUsername = async (username, currentUserId) => {
+  const response = await api.get("/users/check-username", {
+    params: {
+      username,
+      currentUserId,
+    },
+  });
+  return response.data;
+};
+
 export const updateUserProfile = async (userId, data) => {
   const res = await api.put(`/users/profile/${userId}`, data);
   return res.data;

@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { closePopup } from "../../redux/reducer/chatPopupReducer";
 import socket from "../../utils/socket";
 import { getMessages } from "../../services/chatService";
+import { User } from "lucide-react";
 
 export default function ChatPopup({ userId, userInfo, conversationId, index }) {
   const dispatch = useDispatch();
@@ -130,17 +131,25 @@ export default function ChatPopup({ userId, userInfo, conversationId, index }) {
 
   return (
     <div
-      style={{ bottom: 16, right: 16 + index * 288 }}
+      style={{ bottom: 16, right: 16 + index * 350 }}
       className="fixed w-80 h-[400px] bg-white rounded shadow-lg z-20 flex flex-col border"
     >
       {/* HEADER */}
       <div className="flex items-center justify-between px-3 py-2 bg-blue-500 text-white rounded-t">
         <div className="flex items-center gap-2">
-          <img
-            src={userInfo.avatarUrl || "/default-avatar.png"}
-            alt=""
-            className="w-8 h-8 rounded-full object-cover"
-          />
+          <div className="w-8 h-8">
+            {userInfo?.avatarUrl ? (
+              <img
+                src={userInfo.avatarUrl}
+                alt=""
+                className="w-8 h-8 rounded-full object-cover"
+              />
+            ) : (
+              <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+                <User size={16} className="text-gray-500" />
+              </div>
+            )}
+          </div>
           <span className="font-semibold truncate w-32">
             {userInfo.username}
           </span>

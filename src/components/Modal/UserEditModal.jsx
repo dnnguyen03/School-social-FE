@@ -25,7 +25,6 @@ export default function EditProfileModal({
       isAdmin,
       isLocked,
       isDeleted,
-      avatarUrl,
     };
     onSave(updated);
   };

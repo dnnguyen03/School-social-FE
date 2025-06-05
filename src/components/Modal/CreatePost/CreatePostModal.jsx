@@ -28,7 +28,7 @@ const CreatePostModal = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const editPostData = useSelector((state) => state.modal.editPostData);
 
-  const maxCharacters = 280;
+  const maxCharacters = 500;
 
   useEffect(() => {
     if (editPostData) {

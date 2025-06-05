@@ -1,4 +1,3 @@
-// src/utils/socket.js
 import { io } from "socket.io-client";
 
 const socket = io(import.meta.env.VITE_SOCKET_URL, {
@@ -11,7 +10,6 @@ let isCallbackSet = false;
 export const setGlobalReceiveMessageCallback = (cb) => {
   onMessageGlobalCallback = cb;
 
-  // Đảm bảo chỉ gắn 1 lần listener
   if (!isCallbackSet) {
     socket.on("receiveMessage", (msg) => {
       if (typeof onMessageGlobalCallback === "function") {

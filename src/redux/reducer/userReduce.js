@@ -1,4 +1,3 @@
-// features/user/userSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import {
   suggestUser,
@@ -11,6 +10,7 @@ import {
   updateUserProfile,
   deleteUser,
   restoreUser,
+  checkUsername,
 } from "../../services/usreService";
 
 // Thunks
@@ -50,6 +50,21 @@ export const searchUsersThunk = createAsyncThunk(
     return await searchUsers(keyword);
   }
 );
+
+export const checkUsernameThunk = createAsyncThunk(
+  "user/checkUsername",
+  async ({ username, currentUserId }, { rejectWithValue }) => {
+    try {
+      const res = await checkUsername(username, currentUserId);
+      return res;
+    } catch (err) {
+      return rejectWithValue(
+        err?.response?.data?.message || err.message || "Lỗi kiểm tra username"
+      );
+    }
+  }
+);
+
 export const updateUserThunk = createAsyncThunk(
   "user/updateUser",
   async (data, { rejectWithValue }) => {
@@ -125,6 +140,7 @@ const userSlice = createSlice({
     onlineUsers: [],
     loading: false,
     error: null,
+    usernameCheckResult: null,
 
     adminUserList: [],
     totalUsers: 0,
@@ -138,7 +154,6 @@ const userSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Gợi ý người dùng
       .addCase(suggestUserThunk.pending, (state) => {
         state.loading = true;
       })
@@ -149,6 +164,18 @@ const userSlice = createSlice({
       .addCase(suggestUserThunk.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message;
+      })
+
+      .addCase(checkUsernameThunk.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(checkUsernameThunk.fulfilled, (state, action) => {
+        state.loading = false;
+        state.usernameCheckResult = action.payload;
+      })
+      .addCase(checkUsernameThunk.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       })
 
       .addCase(lockUserThunk.fulfilled, (state, action) => {
@@ -190,7 +217,6 @@ const userSlice = createSlice({
         }
       })
 
-      // Theo dõi người dùng
       .addCase(followUserThunk.fulfilled, (state, action) => {
         state.followedUsers.push(action.payload);
         state.suggestedUsers = state.suggestedUsers.map((user) =>
@@ -201,7 +227,6 @@ const userSlice = createSlice({
         );
       })
 
-      // Hủy theo dõi người dùng
       .addCase(unfollowUserThunk.fulfilled, (state, action) => {
         state.followedUsers = state.followedUsers.filter(
           (id) => id !== action.payload
@@ -214,7 +239,6 @@ const userSlice = createSlice({
         );
       })
 
-      // Tìm kiếm người dùng
       .addCase(searchUsersThunk.pending, (state) => {
         state.loading = true;
       })
@@ -231,7 +255,6 @@ const userSlice = createSlice({
         state.mutuals = action.payload;
       })
 
-      // Lấy thông tin chi tiết người dùng
       .addCase(getUserThunk.fulfilled, (state, action) => {
         state.userDetails = action.payload;
       })

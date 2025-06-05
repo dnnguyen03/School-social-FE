@@ -88,7 +88,7 @@ export const ignoreReport = async (postId) => {
 };
 
 export const deleteReportedPost = async (postId) => {
-  const res = await api.delete(`/posts/${postId}/report/reported`);
+  const res = await api.delete(`/posts/${postId}/report/delete`);
   return res.data;
 };
 

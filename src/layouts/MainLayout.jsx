@@ -51,7 +51,6 @@ const MainLayout = () => {
     });
 
     socket.on("newNotification", (notification) => {
-      console.log("🔥 Socket received notification:", notification);
       dispatch(addNotificationRealtime(notification));
     });
 
