@@ -276,9 +276,16 @@ const postSlice = createSlice({
         state.error = action.error.message;
       })
       .addCase(getReportedPostsThunk.fulfilled, (state, action) => {
-        state.reportedPosts = action.payload.sort(
-          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-        );
+        const sorted = [...action.payload].sort((a, b) => {
+          const lastA = Math.max(
+            ...a.reports.map((r) => new Date(r.reportedAt))
+          );
+          const lastB = Math.max(
+            ...b.reports.map((r) => new Date(r.reportedAt))
+          );
+          return lastB - lastA;
+        });
+        state.reportedPosts = sorted;
       })
 
       .addCase(hidePostThunk.fulfilled, (state, action) => {})
